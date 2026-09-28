@@ -37,12 +37,14 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        setContent {
+        setContent { //aplicamos el tema de colores del proyecto a todo lo que va dentro
             Reto01TarjetaPresentacionTheme {
+                //surface = el espacio de fondo que ocupa toda la pantalla
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
+                    //aqui se llama al funcion, la que dibuja la tarjeta
                     TarjetaPresentacion()
                 }
             }
@@ -52,51 +54,57 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun TarjetaPresentacion() {
-
+    //localcontext: asi un Composable pide presrado el contexto de android
+    // lo necesitamos para poder abrir el navegador desde el boton
     val context = LocalContext.current
-
+    // Column: apila los elementos de arriba a abajo (flexbox vertical)
     Column(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
+            .fillMaxSize() //ocupa toda la pantalla
+            .padding(16.dp), //margen para que nada toque los bordes
+        horizontalAlignment = Alignment.CenterHorizontally, //centrar en el eje x y eje y
         verticalArrangement = Arrangement.Center
     ) {
-
+        //image es la foto de perfil
         Image(
             painter = painterResource(id = R.drawable.foto_perfil),
-            contentDescription = "Foto de perfil de usuario",
+            contentDescription = "Foto de perfil de usuario", //accesibilidad
             modifier = Modifier
-                .size(150.dp)
-                .clip(CircleShape),
-            contentScale = ContentScale.Crop
+                .size(150.dp) //tamaño fijo 150x150
+                .clip(CircleShape), //la recorta en forma circular
+            contentScale = ContentScale.Crop //rellena el circulo sin deformar la imagen
         )
-
+        //hueco vacio entre la imagen y el texto
         Spacer(modifier = Modifier.height(24.dp))
-
+        //nombre
         Text(
             text = "Shaghayegh Asghari",
             fontSize = 32.sp,
             fontWeight = FontWeight.Bold
         )
-
+    //rol
         Text(
             text = "Desarrollador MERN & Docente DAM",
             fontSize = 18.sp,
-            color = MaterialTheme.colorScheme.secondary
+            color = MaterialTheme.colorScheme.secondary //color secundario del texto
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        //mayor espacio antes del boton
 
+        Spacer(modifier = Modifier.height(24.dp))
+        //boton enlace github
         Button(
             onClick = {
+                //intent action_view: le decimos a android que queremos VER y el sistema decide que app usar (navegador etc..)
+                //uri.parse convierte el texto de la url en el formato que android entiende
+                //startActivity lanza esa accion
                 val intent = Intent(
                     Intent.ACTION_VIEW,
                     Uri.parse("https://github.com/sha2dev56")
                 )
                 context.startActivity(intent)
             },
-            modifier = Modifier.fillMaxWidth(0.8f)
+            modifier = Modifier.fillMaxWidth(0.8f) //ocupa el 80% de ancho de pantalla
         ) {
             Text(text = "Mi perfil de GitHub")
         }
