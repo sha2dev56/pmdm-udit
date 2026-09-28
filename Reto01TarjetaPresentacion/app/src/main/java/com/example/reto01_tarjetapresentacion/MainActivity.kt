@@ -37,14 +37,12 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        setContent { //aplicamos el tema de colores del proyecto a todo lo que va dentro
+        setContent {
             Reto01TarjetaPresentacionTheme {
-                //surface = el espacio de fondo que ocupa toda la pantalla
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    //aqui se llama al funcion, la que dibuja la tarjeta
                     TarjetaPresentacion()
                 }
             }
@@ -54,59 +52,106 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun TarjetaPresentacion() {
-    //localcontext: asi un Composable pide presrado el contexto de android
-    // lo necesitamos para poder abrir el navegador desde el boton
+
+    // Obtenemos el contexto de Android para poder abrir
+    // aplicaciones externas como el navegador o el correo.
     val context = LocalContext.current
-    // Column: apila los elementos de arriba a abajo (flexbox vertical)
+
     Column(
         modifier = Modifier
-            .fillMaxSize() //ocupa toda la pantalla
-            .padding(16.dp), //margen para que nada toque los bordes
-        horizontalAlignment = Alignment.CenterHorizontally, //centrar en el eje x y eje y
+            .fillMaxSize()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        //image es la foto de perfil
+
+        // Foto de perfil
         Image(
             painter = painterResource(id = R.drawable.foto_perfil),
-            contentDescription = "Foto de perfil de usuario", //accesibilidad
+            contentDescription = "Foto de perfil de usuario",
             modifier = Modifier
-                .size(150.dp) //tamaño fijo 150x150
-                .clip(CircleShape), //la recorta en forma circular
-            contentScale = ContentScale.Crop //rellena el circulo sin deformar la imagen
+                .size(150.dp)
+                .clip(CircleShape),
+            contentScale = ContentScale.Crop
         )
-        //hueco vacio entre la imagen y el texto
+
         Spacer(modifier = Modifier.height(24.dp))
-        //nombre
+
+        // Nombre
         Text(
             text = "Shaghayegh Asghari",
             fontSize = 32.sp,
             fontWeight = FontWeight.Bold
         )
-    //rol
+
+        // Profesión
         Text(
-            text = "Desarrollador MERN & Docente DAM",
+            text = "Desarrolladora de Aplicaciones",
             fontSize = 18.sp,
-            color = MaterialTheme.colorScheme.secondary //color secundario del texto
+            color = MaterialTheme.colorScheme.secondary
         )
 
-        //mayor espacio antes del boton
-
         Spacer(modifier = Modifier.height(24.dp))
-        //boton enlace github
+
+        // Botón de GitHub
         Button(
             onClick = {
-                //intent action_view: le decimos a android que queremos VER y el sistema decide que app usar (navegador etc..)
-                //uri.parse convierte el texto de la url en el formato que android entiende
-                //startActivity lanza esa accion
                 val intent = Intent(
                     Intent.ACTION_VIEW,
                     Uri.parse("https://github.com/sha2dev56")
                 )
                 context.startActivity(intent)
             },
-            modifier = Modifier.fillMaxWidth(0.8f) //ocupa el 80% de ancho de pantalla
+            modifier = Modifier.fillMaxWidth(0.8f)
         ) {
             Text(text = "Mi perfil de GitHub")
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Botón de LinkedIn
+        Button(
+            onClick = {
+                val intent = Intent(
+                    Intent.ACTION_VIEW,
+                    Uri.parse("https://www.linkedin.com/in/shaghayegh-asghari-223401352/")
+                )
+                context.startActivity(intent)
+            },
+            modifier = Modifier.fillMaxWidth(0.8f)
+        ) {
+            Text(text = "Mi perfil de LinkedIn")
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Texto de contacto
+        Text(
+            text = "¿Tienes un proyecto en mente?",
+            fontSize = 16.sp,
+            fontWeight = FontWeight.SemiBold
+        )
+
+        Text(
+            text = "Estoy disponible para nuevas oportunidades y colaboraciones.",
+            fontSize = 14.sp,
+            color = MaterialTheme.colorScheme.secondary
+
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Button(
+            onClick = {
+                val intent = Intent(
+                    Intent.ACTION_SENDTO,
+                    Uri.parse( "mailto:sha2dev56@gmail.com" + "?subject=Consulta%20profesional" + "&body=Hola%20Shaghayegh,%0A%0A" + "Me%20gustaría%20ponerme%20en%20contacto%20contigo%20para%20hablar%20sobre%20una%20posible%20colaboración%20o%20proyecto.%0A%0A" + "Un%20saludo.") //nos redirige al email con el correo de contacto
+                )
+                context.startActivity(intent)
+            },
+            modifier = Modifier.fillMaxWidth(0.8f)
+        ) {
+            Text(text = "Contact me!")
         }
     }
 }
