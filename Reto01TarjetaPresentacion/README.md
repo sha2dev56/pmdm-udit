@@ -11,7 +11,11 @@
 ## Qué es esta app
 
 Una tarjeta de presentación digital (estilo Linktree) que muestra una foto de perfil, mi nombre, mi rol profesional y diferentes opciones para conocer mi perfil profesional y contactar conmigo.
+
+
 <img width="369" height="768" alt="image" src="https://github.com/user-attachments/assets/fb3e0da8-187c-4bab-ae21-26c5d9980b38" />
+
+
 
 La aplicación incluye:
 
