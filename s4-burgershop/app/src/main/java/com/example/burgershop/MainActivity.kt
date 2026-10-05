@@ -4,8 +4,11 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -13,6 +16,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import com.example.burgershop.MainActivity.Producto
 import com.example.burgershop.ui.theme.BurgerShopTheme
 //activity principal
@@ -76,6 +80,25 @@ class MainActivity : ComponentActivity() {
             imanResId = R.drawable.burger_vegetariana
         ),
     )
+    //CATALOGO
+    //LAZYCOLUMN: pinta una lista que se puede recorrer en scroll
+    //vertical. solo dibuja en memoria lo que se ve en una pantalla
+    //(por uso se llama lazy) es eficiente aunqeu la lista  tenga cientos de elementos
+
+    @Composable
+    fun CatalogoHamburgesas(productos : List<Producto>){
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            //margen alrededor de toda la lista
+            contentPadding = PaddingValues(16.dp),
+            //espacio entre una tarjeta y la siguiente
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            items(productos){
+                producto -> TarjetaProducto(producto)
+            }
+        }
+    }
 }
 
 
