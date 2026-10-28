@@ -71,28 +71,47 @@ fun TarjetaPresentacion() {
             painter = painterResource(id = R.drawable.foto_perfil),
             contentDescription = "Foto de perfil de usuario",
             modifier = Modifier
-                .size(150.dp)
+                .size(110.dp)
                 .clip(CircleShape),
             contentScale = ContentScale.Crop
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         // Nombre
         Text(
             text = "Shaghayegh Asghari",
-            fontSize = 32.sp,
+            fontSize = 28.sp,
             fontWeight = FontWeight.Bold
         )
 
         // Profesión
         Text(
             text = "Desarrolladora de Aplicaciones",
-            fontSize = 18.sp,
+            fontSize = 16.sp,
             color = MaterialTheme.colorScheme.secondary
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // --- AÑADIDO: QR DE LINKEDIN PARA LOS RECLUTADORES ---
+        Text(
+            text = "Escanea para ver mi LinkedIn",
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.primary
+        )
+
+        Spacer(modifier = Modifier.height(2.dp))
+
+        Image(
+            painter = painterResource(id = R.drawable.linkedinqr), // Asegúrate de tener tu qr_codigo.png en drawable
+            contentDescription = "Código QR de LinkedIn",
+            modifier = Modifier.size(100.dp),
+            contentScale = ContentScale.Fit
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
 
         // Botón de GitHub
         Button(
@@ -124,30 +143,29 @@ fun TarjetaPresentacion() {
             Text(text = "Mi perfil de LinkedIn")
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         // Texto de contacto
         Text(
             text = "¿Tienes un proyecto en mente?",
-            fontSize = 16.sp,
+            fontSize = 15.sp,
             fontWeight = FontWeight.SemiBold
         )
 
         Text(
             text = "Estoy disponible para nuevas oportunidades y colaboraciones.",
-            fontSize = 14.sp,
+            fontSize = 13.sp,
             color = MaterialTheme.colorScheme.secondary,
             textAlign= TextAlign.Center
-
         )
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         Button(
             onClick = {
                 val intent = Intent(
                     Intent.ACTION_SENDTO,
-                    Uri.parse( "mailto:sha2dev56@gmail.com" + "?subject=Consulta%20profesional" + "&body=Hola%20Shaghayegh,%0A%0A" + "Me%20gustaría%20ponerme%20en%20contacto%20contigo%20para%20hablar%20sobre%20una%20posible%20colaboración%20o%20proyecto.%0A%0A" + "Un%20saludo.") //nos redirige al email con el correo de contacto
+                    Uri.parse( "mailto:sha2dev56@gmail.com" + "?subject=Consulta%20profesional" + "&body=Hola%20Shaghayegh,%0A%0A" + "Me%20gustaría%20ponerme%20en%20contacto%20contigo%20para%20hablar%20sobre%20una%20posible%20colaboración%20o%20proyecto.%0A%0A" + "Un%20saludo.")
                 )
                 context.startActivity(intent)
             },
