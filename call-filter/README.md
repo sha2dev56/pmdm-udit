@@ -304,6 +304,97 @@ Algunas funcionalidades que podrían incorporarse en próximas versiones son:
 
 ---
 
+## 🧠 Reflexión crítica
+
+### 1. ¿Qué es CallScreeningService y qué función cumple en Android?
+
+`CallScreeningService` es una clase que proporciona Android para que las aplicaciones puedan analizar las llamadas telefónicas entrantes antes de que se establezca la comunicación.
+
+En CallFilter utilizamos este servicio para recibir información sobre el número que está realizando la llamada y comprobar si coincide con alguna de las reglas configuradas por el usuario.
+
+A partir del resultado del análisis, la aplicación puede decidir si permite o rechaza la llamada mediante la respuesta correspondiente del sistema Android.
+
+Su principal ventaja es que permite realizar el filtrado utilizando los mecanismos oficiales de Android, sin tener que desarrollar un sistema propio de detección de llamadas.
+
+### 2. ¿Por qué necesitamos solicitar el rol ROLE_CALL_SCREENING?
+
+Android protege determinadas funciones del sistema para evitar que cualquier aplicación pueda controlar aspectos sensibles del dispositivo.
+
+El rol `ROLE_CALL_SCREENING` permite que una aplicación sea reconocida como la encargada de analizar y filtrar las llamadas entrantes.
+
+Por este motivo, CallFilter debe solicitar este rol al usuario mediante los mecanismos oficiales de Android.
+
+Una vez concedido, el sistema puede invocar nuestro servicio `CallFilterService` cuando se recibe una llamada que debe analizarse.
+
+Es importante destacar que instalar la aplicación no es suficiente: el usuario debe aceptar expresamente este rol para que el filtrado real pueda funcionar.
+
+### 3. ¿Por qué no necesitamos un servidor externo para realizar el filtrado?
+
+CallFilter realiza el procesamiento directamente en el dispositivo Android.
+
+Las reglas se almacenan localmente mediante SQLite y el motor `FilterEngine` se encarga de comparar los números entrantes con las condiciones configuradas.
+
+No necesitamos enviar los números telefónicos a un servidor externo para tomar decisiones, ya que toda la lógica de filtrado se ejecuta dentro de la propia aplicación.
+
+Esto presenta varias ventajas:
+
+- **Privacidad:** los números no necesitan enviarse a servicios externos.
+- **Rapidez:** las comprobaciones se realizan localmente.
+- **Disponibilidad:** el filtrado no depende de una conexión a Internet.
+- **Autonomía:** el usuario mantiene sus reglas y datos en su propio dispositivo.
+
+Por tanto, una arquitectura local resulta suficiente para las necesidades de este proyecto.
+
+### 4. ¿Qué ocurre si el número telefónico está guardado en los contactos?
+
+El comportamiento depende de las reglas de filtrado configuradas y de cómo Android proporcione la información de la llamada.
+
+Que un número esté guardado en la agenda no significa automáticamente que deba permitirse. Si coincide con una regla de bloqueo, el resultado dependerá de las prioridades y excepciones que aplique el motor de filtrado.
+
+En CallFilter, la lista blanca permite establecer excepciones para números que el usuario quiere recibir aunque coincidan con otras condiciones de bloqueo.
+
+De esta manera, el usuario puede decidir qué números tienen prioridad, independientemente de que estén guardados o no en sus contactos.
+
+### 5. ¿Qué diferencias existen entre comprobar un número mediante una función y bloquear realmente una llamada?
+
+Son dos operaciones diferentes que no deben confundirse.
+
+**Comprobar un número mediante una función:**
+
+Consiste en ejecutar una función del motor `FilterEngine` que recibe un número y evalúa las reglas configuradas.
+
+El resultado indica si ese número debería permitirse o bloquearse según las condiciones existentes.
+
+Esta operación es útil para realizar pruebas, simular llamadas y comprobar que las reglas funcionan correctamente, pero por sí sola no afecta a ninguna llamada real.
+
+**Bloquear realmente una llamada:**
+
+Para bloquear una llamada real es necesario que Android invoque el servicio `CallScreeningService` de la aplicación y que este responda utilizando el mecanismo oficial de `CallResponse`.
+
+En este caso, la decisión del motor de filtrado se comunica al sistema operativo, que es el encargado de aplicar el rechazo de la llamada.
+
+Por tanto, la diferencia principal es que una función únicamente calcula una decisión, mientras que el servicio permite trasladar esa decisión al sistema Android para actuar sobre una llamada entrante real.
+
+### 6. ¿Qué mejoras incorporarías en una futura versión?
+
+Después de desarrollar CallFilter, considero que existen varias mejoras que podrían ampliar sus posibilidades y mejorar la experiencia del usuario.
+
+Las principales serían:
+
+- **Estadísticas avanzadas:** incorporar gráficos para visualizar la evolución de las llamadas bloqueadas y permitidas.
+- **Gestión inteligente de contactos:** permitir crear reglas automáticas para contactos conocidos, números desconocidos o números privados.
+- **Copias de seguridad:** añadir la posibilidad de guardar y restaurar las reglas y la configuración.
+- **Notificaciones personalizadas:** avisar al usuario cuando se bloquee una llamada importante o se detecte un número sospechoso.
+- **Mejoras en la interfaz:** incorporar más opciones de personalización y facilitar la navegación.
+- **Pruebas adicionales:** ampliar las pruebas automatizadas para cubrir más situaciones reales y posibles errores.
+- **Protección de datos:** mejorar las opciones de privacidad y permitir configurar cuánto tiempo se conserva el historial.
+
+Como reflexión final, desarrollar CallFilter me ha permitido comprender mejor cómo Android gestiona las llamadas telefónicas, cómo funcionan los servicios del sistema y por qué es importante respetar los permisos y roles que proporciona la plataforma.
+
+También he podido aplicar conocimientos de Kotlin, Jetpack Compose, SQLite y pruebas unitarias en una aplicación práctica, separando la interfaz gráfica de la lógica de negocio.
+
+Considero que uno de los aspectos más importantes del proyecto ha sido comprobar que no basta con desarrollar una función que determine si un número debe bloquearse: también es necesario integrarla correctamente con los mecanismos del sistema operativo para que esa decisión tenga un efecto real.
+
 ## 👨‍💻 Autoría
 
 Proyecto desarrollado como parte de la asignatura **Programación Multimedia y Dispositivos Móviles (PMDM)** del ciclo formativo de Desarrollo de Aplicaciones Multiplataforma (DAM).
