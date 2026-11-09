@@ -171,6 +171,12 @@ class FilterDbHelper private constructor(context: Context) :
         return list
     }
 
+    fun getLogCount(): Int {
+        readableDatabase.rawQuery("SELECT COUNT(*) FROM call_log", null).use { c ->
+            return if (c.moveToFirst()) c.getInt(0) else 0
+        }
+    }
+
     /** Solo cuenta llamadas reales; las simuladas no ensucian las estadísticas. */
     fun getStats(): Stats {
         var total = 0
