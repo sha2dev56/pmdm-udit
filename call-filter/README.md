@@ -1,105 +1,316 @@
-# Filtro 400 · Bloqueo de llamadas con `CallScreeningService`
+# 📞 CallFilter — Aplicación Android para el filtrado de llamadas
 
-App Android (Kotlin) que rechaza automáticamente las llamadas entrantes cuyo número empieza por **400**, contemplando los formatos españoles `400…`, `+34 400…` y `0034 400…`. El filtrado lo hace el propio sistema operativo a través de `CallScreeningService` y el rol `ROLE_CALL_SCREENING`, sin servidor externo.
+**CallFilter** es una aplicación Android desarrollada en Kotlin que permite identificar, filtrar y bloquear llamadas telefónicas entrantes mediante reglas personalizadas.
 
-- **Vídeo de demostración (OneDrive):** `PEGAR_ENLACE_AQUÍ`
-- **Lenguaje / IDE:** Kotlin · Android Studio
-- **minSdk 29 (Android 10)** · targetSdk 35
+El objetivo del proyecto es ofrecer al usuario un mayor control sobre las llamadas que recibe, permitiéndole configurar números y prefijos bloqueados, crear excepciones y consultar un registro de actividad desde una interfaz moderna e intuitiva.
 
-## Funcionamiento
+La aplicación utiliza la API nativa `CallScreeningService` de Android para analizar las llamadas entrantes y decidir si deben permitirse o rechazarse.
 
-1. El usuario pulsa **Activar filtro** y Android muestra su diálogo para conceder a la app el rol de filtrado de llamadas (`ROLE_CALL_SCREENING`).
-2. Con el rol concedido, cada vez que entra una llamada Telecom enlaza `CallFilterService` y llama a `onScreenCall()`.
-3. El servicio lee el número (`callDetails.handle`), lo normaliza y aplica la regla.
-4. Responde con `CallResponse`: si el número empieza por 400 la rechaza (`setDisallowCall(true)` + `setRejectCall(true)`); si no, la deja continuar con normalidad.
-5. La interfaz muestra el estado del rol, un contador de llamadas bloqueadas por el servicio y un comprobador de números de prueba.
+---
 
-## Estructura
+## 🚀 Funcionalidades principales
 
-```
-app/src/main/java/com/sha2dev/callfilter/
-├── PhoneNumberFilter.kt    # Lógica pura: normalización + regla del prefijo 400
-├── CallFilterService.kt    # CallScreeningService: decide y responde a cada llamada
-├── MainActivity.kt         # UI mínima: solicitar rol, estado, contador, comprobador
-└── BlockStats.kt           # Contador de llamadas bloqueadas (SharedPreferences)
-app/src/test/.../PhoneNumberFilterTest.kt   # Tests unitarios de la lógica
-```
+### 🏠 1. Pantalla de inicio
 
-## Decisiones técnicas
+La pantalla principal proporciona una visión general del estado de protección de la aplicación.
 
-- **Lógica separada del servicio.** `PhoneNumberFilter` no depende de Android, así que se prueba con tests JVM rápidos, sin emulador, y el servicio queda reducido a leer el número y responder.
-- **Normalización antes de comparar.** Se eliminan espacios, guiones, puntos y paréntesis. Si el número empieza por `+34` o `0034` se quita ese prefijo; así `+34 400 123 456`, `0034-400-123-456` y `400123456` dan el mismo resultado.
-- **Números extranjeros protegidos.** `+44 400…`, `0044 400…` o `+1 400…` conservan su prefijo internacional al normalizarse, por lo que no se bloquean por error. Tampoco se bloquea un `400` que no esté al principio (`+34 91 400 12 34`).
-- **Solo llamadas entrantes.** Se comprueba `callDirection == DIRECTION_INCOMING`; las salientes siempre se permiten.
-- **Número oculto.** Si `handle` es `null`, la llamada continúa (no hay número que evaluar).
-- **Rechazo transparente.** Se rechaza como si el usuario colgara pero se mantiene el registro de llamadas y la notificación de llamada perdida (`setSkipCallLog(false)`, `setSkipNotification(false)`), para que el usuario pueda ver qué se bloqueó.
-- **Privacidad.** El log solo escribe el prefijo de 3 dígitos y el contador no guarda números. La app no pide ningún permiso peligroso: solo el rol.
-- **Vistas XML + Material 3** en lugar de Compose, para una interfaz mínima con pocas dependencias.
-- **No se trata `34400…` sin `+` ni `00`** como número español: sin indicador internacional es ambiguo, y Android entrega normalmente los números en formato internacional (`+34…`) o nacional.
+Incluye:
+- Estado de activación del filtro de llamadas.
+- Número de reglas configuradas y reglas activas.
+- Resumen de llamadas revisadas y bloqueadas.
+- Porcentaje de llamadas bloqueadas.
+- Actividad reciente.
+- Acceso directo al simulador y a los ajustes.
 
-## Cómo ejecutarlo
+### 🚫 2. Gestión de reglas
 
-1. Abre la carpeta en Android Studio y espera a la sincronización de Gradle (puede sugerir actualizar versiones de AGP/Kotlin; es seguro aceptar).
-2. Ejecuta la app en un dispositivo o emulador con Android 10 o superior y pulsa **Activar filtro**.
-3. Para probar sin llamar desde otro teléfono, en el emulador:
+La aplicación permite crear y administrar diferentes tipos de reglas para controlar las llamadas entrantes.
 
-```bash
-adb emu gsm call 400123456        # debe bloquearse
-adb emu gsm call +34400123456     # debe bloquearse
-adb emu gsm call 0034400123456    # debe bloquearse
-adb emu gsm call 612345678        # debe sonar con normalidad
-adb emu gsm cancel 612345678      # colgar la llamada de prueba
-```
+Se distinguen tres tipos:
 
-   Para ver la decisión del servicio: `adb logcat -s CallFilterService`.
+- **Prefijos bloqueados:** rechaza cualquier número que comience por un prefijo determinado.
+- **Números bloqueados:** rechaza números telefónicos concretos.
+- **Lista blanca:** permite números específicos aunque coincidan con alguna regla de bloqueo de menor prioridad.
 
-> En el emulador el número de prueba no está en contactos. En un teléfono real, haz la prueba con un número que no tengas guardado (ver pregunta 4).
+Además, permite:
+- Añadir nuevas reglas.
+- Editar y eliminar reglas existentes.
+- Activar o desactivar reglas individualmente.
+- Buscar números y prefijos.
+- Configurar prioridades.
+- Establecer franjas horarias para aplicar determinadas reglas.
 
-### Tests unitarios
+### 📋 3. Registro de actividad
 
-```bash
-./gradlew testDebugUnitTest
-```
+La aplicación mantiene un historial de las llamadas revisadas por el filtro.
 
-También desde Android Studio: clic derecho sobre `PhoneNumberFilterTest` → *Run*.
+Permite:
+- Consultar llamadas bloqueadas y permitidas.
+- Diferenciar las llamadas reales de las simulaciones.
+- Filtrar los registros por categoría.
+- Consultar la fecha y hora de cada evento.
+- Identificar la regla que ha provocado el bloqueo.
+- Consultar estadísticas de actividad.
+- Eliminar el historial cuando se desee.
 
-## Pruebas y evidencias
+Por privacidad, los números se almacenan enmascarados en el registro.
 
-> Sustituir cada marcador por la captura real (guardar en `docs/img/`).
+### 🧪 4. Simulador de llamadas
 
-| Evidencia | Captura |
+Incluye un simulador para comprobar el funcionamiento de las reglas sin necesidad de recibir una llamada real.
+
+Permite:
+- Introducir un número telefónico.
+- Seleccionar una hora para realizar la comprobación.
+- Ejecutar el motor de filtrado.
+- Consultar si la llamada sería bloqueada o permitida.
+- Identificar la regla que ha provocado la decisión.
+- Guardar el resultado en el historial como una prueba.
+
+Esta funcionalidad facilita comprobar las reglas antes de utilizar el filtro con llamadas reales.
+
+### ⚙️ 5. Ajustes y configuración
+
+La pantalla de ajustes permite personalizar diferentes aspectos de la aplicación:
+
+- Activar la protección mediante el permiso correspondiente de Android.
+- Cambiar entre tema claro, oscuro o automático.
+- Importar reglas desde archivos CSV.
+- Exportar las reglas configuradas a CSV.
+- Consultar el estado de protección.
+- Gestionar y borrar el historial.
+
+---
+
+## 🛠️ Tecnologías utilizadas
+
+| Tecnología | Utilización |
 |---|---|
-| Interfaz con el filtro inactivo | `![inactivo](docs/img/01-inactivo.png)` |
-| Diálogo del sistema para conceder el rol | `![rol](docs/img/02-rol.png)` |
-| Interfaz con el filtro activo | `![activo](docs/img/03-activo.png)` |
-| Llamada desde 400… bloqueada + contador incrementado | `![bloqueo](docs/img/04-bloqueo.png)` |
-| Llamada desde un número normal que sí suena | `![permitida](docs/img/05-permitida.png)` |
-| Salida de logcat (`CallFilterService`) | `![logcat](docs/img/06-logcat.png)` |
-| Tests unitarios en verde | `![tests](docs/img/07-tests.png)` |
+| Kotlin | Lenguaje principal de programación. |
+| Android Studio | Entorno de desarrollo. |
+| Jetpack Compose | Desarrollo de la interfaz gráfica. |
+| Material 3 | Componentes y diseño visual. |
+| CallScreeningService | Identificación y filtrado de llamadas entrantes. |
+| SQLite | Almacenamiento local de reglas e historial. |
+| SharedPreferences | Persistencia de preferencias de apariencia. |
+| JUnit | Pruebas unitarias. |
+| Gradle | Automatización de la compilación. |
 
-Casos cubiertos por los tests unitarios: `400…` sin prefijo, `+34`, `0034`, con espacios/guiones/puntos/paréntesis, solo el prefijo, móviles y fijos normales, `400` en medio del número, números extranjeros con `400`, prefijos parciales (`40`, `4`, `+34`), `null`, vacío y texto.
+### Requisitos técnicos
 
-## Reflexión crítica
+- Android 10 o superior (API 29).
+- Android Studio.
+- JDK 11 o compatible con la versión de Gradle utilizada.
+- SDK de Android correspondiente al proyecto.
 
-**1. ¿Qué es `CallScreeningService` y qué función cumple en Android?**
-Es un servicio de Telecom que permite a una app inspeccionar las llamadas nuevas y responder al sistema, antes de que suenen, si deben permitirse, silenciarse, rechazarse, ocultarse del registro o no notificarse. Es la API oficial para apps de bloqueo de spam e identificación de llamadas, y desde Android 10 no requiere ser la app de teléfono por defecto ni permisos como `READ_CALL_LOG`.
+**Configuración actual:**
+- `minSdk`: 29.
+- `targetSdk`: 37.
+- `compileSdk`: 37.
+- `versionName`: 1.0.
 
-**2. ¿Por qué necesitamos solicitar el rol `ROLE_CALL_SCREENING`?**
-Porque filtrar llamadas es una capacidad sensible (puede impedir que el usuario reciba llamadas) y Android no deja que cualquier app la tenga. El sistema de roles hace que el usuario conceda explícitamente esa función a una única app, mediante un diálogo del propio sistema. Sin el rol, Telecom no enlaza el servicio aunque esté declarado en el manifiesto.
+---
 
-**3. ¿Por qué no necesitamos un servidor externo para realizar el filtrado?**
-Porque la regla es local y determinista: basta con mirar el prefijo del número, que Telecom entrega al servicio en el propio dispositivo. No hay que consultar listas negras ni reputación. Esto da respuesta inmediata (la decisión debe llegar rápido, antes de que suene el teléfono), funciona sin conexión y no envía los números de las llamadas a terceros, lo que mejora la privacidad. Un servidor solo haría falta para reglas dinámicas, como una base de datos de spam.
+## 🧩 Estructura del proyecto
 
-**4. ¿Qué ocurre si el número telefónico está guardado en los contactos?**
-Según la documentación oficial de Android, `onScreenCall()` se invoca para llamadas de números que **no** están en la lista de contactos del usuario. Por tanto, un número que empiece por 400 pero esté guardado en contactos no pasaría por el filtro y sonaría con normalidad. Es una decisión de diseño de la plataforma: se asume que lo que el usuario guardó es deseado. Conviene tenerlo en cuenta al hacer pruebas con un teléfono real.
+La aplicación está organizada en diferentes archivos Kotlin, separando la interfaz gráfica, la lógica de filtrado y el almacenamiento de datos.
 
-**5. ¿Qué diferencias existen entre comprobar un número mediante una función y bloquear realmente una llamada?**
-La función (`shouldBlock`, el comprobador de la interfaz) solo contesta *sí o no* a un texto que escribe el usuario; no interviene en nada. Bloquear de verdad exige estar integrado con Telecom: tener el rol concedido, que el sistema enlace el servicio ante una llamada real, recibir el número en el formato que entregue Android, responder dentro del plazo con un `CallResponse`, y aceptar las reglas de la plataforma (como la excepción de contactos). Por eso los tests unitarios validan la regla, pero solo una llamada real o simulada con el emulador demuestra el bloqueo. Además, hay casos que la función no ve: las llamadas con número oculto no se pueden evaluar, y algunos fabricantes añaden ajustes propios (ahorro de batería, gestores de llamadas) que pueden afectar al comportamiento.
+```text
+call-filter/
+│
+├── app/
+│   └── src/
+│       ├── main/
+│       │   ├── java/com/example/callfilter/
+│       │   │   │
+│       │   │   ├── MainActivity.kt
+│       │   │   ├── HomeScreen.kt
+│       │   │   ├── RulesScreen.kt
+│       │   │   ├── LogScreen.kt
+│       │   │   ├── SettingsScreen.kt
+│       │   │   ├── TestScreen.kt
+│       │   │   ├── Components.kt
+│       │   │   ├── AppTheme.kt
+│       │   │   ├── FilterDbHelper.kt
+│       │   │   ├── FilterEngine.kt
+│       │   │   ├── CallFilterService.kt
+│       │   │   └── ...
+│       │   │
+│       │   ├── res/
+│       │   │   ├── drawable/
+│       │   │   ├── mipmap/
+│       │   │   ├── values/
+│       │   │   └── values-night/
+│       │   │
+│       │   └── AndroidManifest.xml
+│       │
+│       ├── test/
+│       │   └── java/com/example/callfilter/
+│       │       ├── CallFilterTest.kt
+│       │       └── FilterEngineTest.kt
+│       │
+│       └── androidTest/
+│
+├── gradle/
+├── build.gradle.kts
+├── settings.gradle.kts
+├── gradle.properties
+├── gradlew
+├── gradlew.bat
+└── README.md
+```
 
-**6. ¿Qué mejoras incorporaría en una futura versión?**
-- Lista de prefijos configurable por el usuario (y lista blanca de excepciones) en lugar de un `400` fijo.
-- Historial de llamadas bloqueadas con fecha, consultable desde la app (con opción de borrarlo).
-- Opción de elegir entre rechazar, silenciar o dejar sonar sin notificación.
-- Normalización con una librería de números (por ejemplo libphonenumber) para soportar otros países y formatos.
-- Notificación al bloquear, tests instrumentados con un `Call.Details` simulado y pruebas de interfaz.
-- Pantalla de ayuda que explique la excepción de contactos y las llamadas con número oculto.
+### Organización del código
+
+- **MainActivity.kt:** punto de entrada de la aplicación, navegación entre pantallas y gestión del permiso de filtrado.
+- **HomeScreen.kt:** pantalla principal y resumen del estado de protección.
+- **RulesScreen.kt:** gestión de números, prefijos y excepciones.
+- **LogScreen.kt:** visualización del historial de actividad.
+- **SettingsScreen.kt:** configuración de la aplicación.
+- **TestScreen.kt:** simulación de llamadas y comprobación de reglas.
+- **Components.kt:** componentes reutilizables de la interfaz.
+- **AppTheme.kt:** configuración visual y colores de la aplicación.
+- **FilterDbHelper.kt:** gestión de la base de datos SQLite.
+- **FilterEngine.kt:** motor encargado de evaluar las reglas.
+- **CallFilterService.kt:** servicio Android que analiza las llamadas entrantes.
+
+---
+
+## ⚙️ Funcionamiento del filtrado de llamadas
+
+El filtrado se realiza mediante el servicio `CallFilterService`, que hereda de la clase `CallScreeningService` proporcionada por Android.
+
+El funcionamiento general es el siguiente:
+
+1. El usuario activa la protección desde la aplicación.
+2. Android solicita autorización mediante el rol `ROLE_CALL_SCREENING`.
+3. Una vez concedido el rol, Android puede invocar el servicio cuando recibe una llamada que debe analizar.
+4. El servicio obtiene el número telefónico y consulta las reglas activas almacenadas en SQLite.
+5. El motor `FilterEngine` normaliza el número y evalúa las reglas teniendo en cuenta su prioridad y sus franjas horarias.
+6. Si la regla seleccionada es de bloqueo, el servicio rechaza la llamada.
+7. Si no existe ninguna regla coincidente o prevalece una regla de la lista blanca, la llamada se permite.
+8. Finalmente, el resultado se registra en la base de datos local.
+
+### Tipos de decisiones
+
+| Situación | Resultado |
+|---|---|
+| Coincide con un prefijo bloqueado | Llamada rechazada |
+| Coincide con un número bloqueado | Llamada rechazada |
+| Coincide con una excepción permitida | Llamada permitida |
+| No coincide con ninguna regla | Llamada permitida |
+| La regla está desactivada | No se aplica |
+| La regla está fuera de su horario | No se aplica |
+
+Las reglas se evalúan según su prioridad. En caso de empate, la lista blanca tiene preferencia.
+
+---
+
+## 📥 Instalación y ejecución
+
+### 1. Clonar el repositorio
+
+```bash
+git clone https://github.com/sha2dev56/pmdm-udit.git
+```
+
+### 2. Abrir el proyecto
+
+Abre Android Studio y selecciona la carpeta:
+
+```text
+pmdm-udit/call-filter
+```
+
+Espera a que finalice la sincronización de Gradle.
+
+### 3. Ejecutar la aplicación
+
+Conecta un dispositivo Android compatible o inicia un emulador con Android 10 o superior.
+
+Pulsa **Run** desde Android Studio para instalar y ejecutar la aplicación.
+
+### 4. Activar la protección
+
+Al abrir la aplicación:
+
+1. Accede a la pantalla de inicio.
+2. Pulsa el botón de activación de la protección.
+3. Android mostrará el diálogo del sistema para conceder el rol de filtrado de llamadas.
+4. Acepta la solicitud.
+5. Comprueba que el estado de protección aparece como activo.
+
+**Importante:** instalar la aplicación no activa automáticamente el filtrado. Es necesario conceder el rol correspondiente desde Android.
+
+---
+
+## 🧪 Pruebas
+
+El proyecto incluye pruebas unitarias para comprobar el comportamiento del motor de filtrado.
+
+Se contemplan casos como:
+
+- Bloqueo mediante prefijos.
+- Bloqueo de números concretos.
+- Normalización de números telefónicos.
+- Aplicación de listas blancas.
+- Comprobación de prioridades.
+- Reglas desactivadas.
+- Franjas horarias normales y nocturnas.
+- Números ocultos o vacíos.
+- Comprobación de horas válidas e inválidas.
+
+### Ejecutar las pruebas
+
+En Windows, desde PowerShell:
+
+```powershell
+.\gradlew.bat testDebugUnitTest
+```
+
+También se pueden ejecutar desde Android Studio haciendo clic derecho sobre las clases de pruebas y seleccionando **Run**.
+
+El simulador integrado permite realizar comprobaciones adicionales sin necesidad de efectuar llamadas reales.
+
+---
+
+## 🔐 Privacidad y permisos
+
+CallFilter está diseñada para realizar el filtrado de llamadas directamente en el dispositivo.
+
+- Las reglas se almacenan localmente mediante SQLite.
+- El historial se guarda en la base de datos del dispositivo.
+- Los números se enmascaran antes de almacenarse en el registro.
+- No es necesario utilizar un servidor externo para evaluar las reglas.
+- El acceso al filtrado de llamadas se gestiona mediante el rol oficial de Android `ROLE_CALL_SCREENING`.
+
+La aplicación declara el servicio de filtrado protegido por el permiso de sistema `BIND_SCREENING_SERVICE`.
+
+El usuario mantiene el control sobre la activación de la protección y las reglas configuradas.
+
+---
+
+## 🔮 Posibles mejoras futuras
+
+Algunas funcionalidades que podrían incorporarse en próximas versiones son:
+
+- Incorporar estadísticas más avanzadas y gráficos.
+- Añadir categorías y etiquetas personalizadas para las reglas.
+- Permitir copias de seguridad y restauración de la configuración.
+- Mejorar las opciones de importación y exportación.
+- Incorporar notificaciones personalizables cuando se bloquee una llamada.
+- Añadir más opciones de personalización visual.
+- Ampliar las pruebas automatizadas de integración y de interfaz.
+
+---
+
+## 👨‍💻 Autoría
+
+Proyecto desarrollado como parte de la asignatura **Programación Multimedia y Dispositivos Móviles (PMDM)** del ciclo formativo de Desarrollo de Aplicaciones Multiplataforma (DAM).
+
+**Repositorio:**  
+https://github.com/sha2dev56/pmdm-udit/tree/main/call-filter
+
+---
+
+*CallFilter — Más control sobre tus llamadas, más tranquilidad en tu día a día.*
